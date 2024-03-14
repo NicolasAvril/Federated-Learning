@@ -54,6 +54,6 @@ def load_datasets(num_clients: int, dataset, data_split):
     return trainloaders, valloaders, testloader
 
 
-def get_data_loader(num_clients: int, cid: int, dataset = "CIFAR10", data_split = "iid"):
+def get_data_loader(num_clients: int, cid: int, dataset = "CIFAR10", data_split = "non_iid_class"):
     trainloaders, valloaders, testloader = load_datasets(num_clients, dataset, data_split)
     return trainloaders[cid], valloaders[cid], testloader

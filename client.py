@@ -58,6 +58,7 @@ def train(net, trainloader, epochs):
 parser = argparse.ArgumentParser(description="Flower")
 parser.add_argument(
     "--node_id",
+    choices=[0, 1, 2,3,4,5,6,7,8,9],
     required=True,
     type=int,
     help="Client id",
@@ -65,7 +66,7 @@ parser.add_argument(
 parser.add_argument(
     "--n",
     type=int,
-    default=2,
+    default=10,
     help="The number of clients in total",
 )
 parser.add_argument(
@@ -84,7 +85,7 @@ parser.add_argument(
     "--local_epochs",
     type=int,
     default=1,
-    help="époques",
+    help="Ã©poques",
 )
 cid = parser.parse_args().node_id
 n = parser.parse_args().n

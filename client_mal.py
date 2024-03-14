@@ -39,34 +39,32 @@ class Net(nn.Module):
 
 def train(net, trainloader, epochs, attack_type):
     """Train the model on the training set."""
-    net.train()
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
     if attack_type == "label_flipping":
-        for epoch in range(epochs):
-            running_loss = 0.0
-            for i, data in enumerate(trainloader, 0):
-                inputs, labels = data
-                inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
-
-                # Inversion d'étiquettes
-                labels = torch.remainder(labels + 1, 10)
-
+        for _ in range(epochs):
+            for images, labels in tqdm(trainloader, "Training"):
+                labels = (labels - 1) % 10
                 optimizer.zero_grad()
-
-                outputs = net(inputs)
-                loss = F.cross_entropy(outputs, labels)
-                loss.backward()
+                criterion(net(images.to(DEVICE)), labels.to(DEVICE)).backward()
                 optimizer.step()
 
-                running_loss += loss.item()
-                if i % 2000 == 1999:    # print every 2000 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                          (epoch + 1, i + 1, running_loss / 2000))
-                    running_loss = 0.0
+    if attack_type == "model_poisoning":
+        # Altération du modèle : montée de gradient pour maximiser la perte
+        for _ in range(epochs):
+            for images, labels in tqdm(trainloader, "Training"):
+                optimizer.zero_grad()
+                outputs = net(images.to(DEVICE))
+                loss = criterion(outputs, labels.to(DEVICE))
 
-    print('Finished Training')
+                # Montée de gradient pour maximiser la perte
+                loss.backward()
+                with torch.no_grad():
+                    for param in net.parameters():
+                        param.data += 0.1 * param.grad  # Modifier le pas de gradient selon besoin
 
+                optimizer.step()
+    
 
 
 def test(net, valloader):
@@ -93,7 +91,7 @@ def test(net, valloader):
 parser = argparse.ArgumentParser(description="Flower")
 parser.add_argument(
     "--node_id",
-    choices=[0, 1, 2],
+    choices=[0, 1, 2, 3,4,5,6,7,8,9],
     required=True,
     type=int,
     help="Client id",
@@ -101,7 +99,7 @@ parser.add_argument(
 parser.add_argument(
     "--n",
     type=int,
-    default=2,
+    default=10,
     help="The number of clients in total",
 )
 parser.add_argument(
@@ -162,6 +160,6 @@ class FlowerClient(fl.client.NumPyClient):
 
 # Start Flower client
 fl.client.start_client(
-    server_address="127.0.0.1:8080",
+    server_address="127.0.0.2:8080",
     client=FlowerClient(cid).to_client(),
 )
